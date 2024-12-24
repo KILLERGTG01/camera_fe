@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:developer' as developer;
-
 import 'package:gal/gal.dart';
+//import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -104,6 +104,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 color: Colors.red,
               ),
             ),
+            /*IconButton(
+              onPressed: () {},
+              iconSize: 150,
+              icon: const Icon(
+                Icons.rectangle_outlined,
+                color: Colors.blue,
+              ),
+            ),*/
           ],
         ),
       ),
@@ -118,12 +126,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (cameras.isNotEmpty) {
         isCameraAvailable = true;
         // Prioritize external cameras if available
-        CameraDescription selectedCamera =
-            cameras.first; // Default to the first camera
+        CameraDescription selectedCamera = cameras.first;
 
         for (var camera in cameras) {
           if (camera.lensDirection == CameraLensDirection.external) {
-            selectedCamera = camera; // Select the external camera
+            selectedCamera = camera;
             break;
           }
         }
@@ -131,7 +138,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         // Initialize the selected camera
         cameraController = CameraController(
           selectedCamera,
-          ResolutionPreset.high, // Use high resolution
+          ResolutionPreset.high,
         );
 
         await cameraController?.initialize();
@@ -152,3 +159,48 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 }
+
+  /*Future<void> _triggerPythonFunctionality() async {
+    // Replace this with your Python server's address and port
+    const pythonServerUrl = 'http://127.0.0.1:5000/run';
+
+    try {
+      final response = await http.get(Uri.parse(pythonServerUrl));
+      if (!mounted) return; // Check if the widget is still mounted before updating the UI
+
+      if (response.statusCode == 200) {
+        developer.log('Python response: ${response.body}', name: 'HomePage');
+        // Show dialog only if the widget is mounted
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Python Script Response'),
+              content: Text(response.body),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      } else {
+        developer.log('Python script error: ${response.statusCode}', name: 'HomePage');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error triggering Python script')),
+          );
+        }
+      }
+    } catch (e) {
+      developer.log('Error triggering Python script: ${e.toString()}', name: 'HomePage');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to communicate with Python')),
+        );
+      }
+    }
+  }
+}*/
