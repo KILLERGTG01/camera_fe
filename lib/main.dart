@@ -1,4 +1,4 @@
-import 'package:dewinter/pages/home_page.dart';
+import 'package:dewinter/pages/start_page.dart';
 import 'package:flutter/material.dart';
 import 'widgets/top_app_bar.dart';
 import 'widgets/bottom_nav_bar.dart';
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       home: const Scaffold(
         appBar: TopAppBar(),
         bottomNavigationBar: BottomNavBar(),
-        body: Center(child: HomePage()),
+        body: Center(child: StartPage()),
       ),
     );
   }

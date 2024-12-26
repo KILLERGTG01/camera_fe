@@ -11,8 +11,8 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-dewinter_sdk/
-
+camera_wifi/
+backend/
 # IntelliJ related
 *.iml
 *.ipr

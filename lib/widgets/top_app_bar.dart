@@ -31,7 +31,7 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         // Share Button
         IconButton(
-          icon: const Icon(Icons.share),
+          icon: const Icon(Icons.ios_share_outlined),
           onPressed: () {
             developer.log('Share button pressed', name: 'TopAppBar');
           },
