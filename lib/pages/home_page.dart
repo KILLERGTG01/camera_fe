@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_mdns_plugin/flutter_mdns_plugin.dart';
-import 'package:network_info_plus/network_info_plus.dart';
+import 'package:camera/camera.dart';
 import 'dart:developer' as developer;
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import 'package:gal/gal.dart';
+//import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,163 +11,196 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final NetworkInfo _networkInfo = NetworkInfo();
-  String localIp = 'Unknown';
-  List<String> networkDevices = [];
-  FlutterMdnsPlugin? _mdnsPlugin;
-  bool cameraFound = false;
-  String cameraHostName = '';
-  bool isStreaming = false;
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+  List<CameraDescription> cameras = [];
+  CameraController? cameraController;
+  bool isCameraAvailable = true;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (cameraController == null ||
+        cameraController?.value.isInitialized == false) {
+      return;
+    }
+    if (state == AppLifecycleState.inactive) {
+      cameraController?.dispose();
+    } else if (state == AppLifecycleState.resumed) {
+      _setupCameraController();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _initializeNetwork();
+    WidgetsBinding.instance.addObserver(this);
+    _setupCameraController();
   }
 
   @override
   void dispose() {
-    _stopMdnsDiscovery();
+    WidgetsBinding.instance.removeObserver(this);
+    cameraController?.dispose();
     super.dispose();
-  }
-
-  Future<void> _initializeNetwork() async {
-    try {
-      final ip = await _networkInfo.getWifiIP(); // Fetch the local IP
-      if (mounted) {
-        setState(() {
-          localIp = ip ?? 'Unknown';
-        });
-        _startMdnsDiscovery();
-      }
-    } catch (e) {
-      developer.log('Failed to get local IP: $e', name: 'HomePage');
-    }
-  }
-
-  void _startMdnsDiscovery() {
-    _mdnsPlugin = FlutterMdnsPlugin(
-      discoveryCallbacks: DiscoveryCallbacks(
-        onDiscoveryStarted: () {
-          developer.log('Discovery started', name: 'HomePage');
-        },
-        onDiscoveryStopped: () {
-          developer.log('Discovery stopped', name: 'HomePage');
-        },
-        onDiscovered: (ServiceInfo serviceInfo) {
-          developer.log('Service discovered: ${serviceInfo.name}',
-              name: 'HomePage');
-        },
-        onResolved: (ServiceInfo serviceInfo) {
-          if (serviceInfo.name.contains('camera')) {
-            if (mounted) {
-              setState(() {
-                cameraFound = true;
-                cameraHostName = serviceInfo.hostName;
-              });
-            }
-            developer.log('Camera resolved at host: $cameraHostName',
-                name: 'HomePage');
-          }
-        },
-      ),
-    );
-
-    _mdnsPlugin?.startDiscovery("_http._tcp");
-  }
-
-  void _stopMdnsDiscovery() {
-    _mdnsPlugin?.stopDiscovery();
-  }
-
-  Future<void> _savePhoto(String photoPath) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final fileName = 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final filePath = '${directory.path}/$fileName';
-
-    try {
-      await File(photoPath).copy(filePath);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Photo saved at $filePath')),
-        );
-      }
-    } catch (e) {
-      developer.log('Failed to save photo: $e', name: 'HomePage');
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (cameraFound && isStreaming) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            Center(
-              child: Text(
-                'Camera Stream Placeholder',
-                style: TextStyle(color: Colors.white, fontSize: 20),
-              ),
-            ),
-            Positioned(
-              bottom: 20,
-              child: IconButton(
-                iconSize: 70,
-                icon: const Icon(
-                  Icons.camera,
-                  color: Colors.red,
-                ),
-                onPressed: () {
-                  // Replace the placeholder code with actual camera capture
-                  final placeholderPath = '/path/to/captured/photo.jpg';
-                  _savePhoto(placeholderPath);
-                },
-              ),
-            ),
-          ],
+    return Scaffold(
+      body: _buildUI(),
+    );
+  }
+
+  Widget _buildUI() {
+    if (!isCameraAvailable) {
+      return const Center(
+        child: Text(
+          'No camera available. Please connect a camera.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+          textAlign: TextAlign.center,
         ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Discover Cameras'),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Local IP: $localIp',
-              style: const TextStyle(fontSize: 16),
+    if (cameraController == null ||
+        cameraController?.value.isInitialized == false) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    return SafeArea(
+      child: SizedBox.expand(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.60,
+              width: MediaQuery.of(context).size.width * 0.80,
+              child: CameraPreview(
+                cameraController!,
+              ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: networkDevices.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text('Device Found: ${networkDevices[index]}'),
-                );
+            IconButton(
+              onPressed: () async {
+                try {
+                  if (cameraController != null &&
+                      cameraController!.value.isInitialized) {
+                    XFile picture = await cameraController!.takePicture();
+                    Gal.putImage(picture.path);
+                  } else {
+                    developer.log('Camera is not initialized',
+                        name: 'HomePage');
+                  }
+                } catch (e) {
+                  developer.log('Error taking picture: ${e.toString()}',
+                      name: 'HomePage');
+                }
               },
+              iconSize: 50,
+              icon: const Icon(
+                Icons.camera,
+                color: Colors.red,
+              ),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                networkDevices.clear();
-                cameraFound = false;
-                isStreaming = false;
-              });
-              _startMdnsDiscovery();
-            },
-            child: const Text('Scan Network'),
-          ),
-        ],
+            /*IconButton(
+              onPressed: () {},
+              iconSize: 150,
+              icon: const Icon(
+                Icons.rectangle_outlined,
+                color: Colors.blue,
+              ),
+            ),*/
+          ],
+        ),
       ),
     );
   }
+
+  Future<void> _setupCameraController() async {
+    try {
+      // Fetch the list of available cameras
+      cameras = await availableCameras();
+
+      if (cameras.isNotEmpty) {
+        isCameraAvailable = true;
+        // Prioritize external cameras if available
+        CameraDescription selectedCamera = cameras.first;
+
+        for (var camera in cameras) {
+          if (camera.lensDirection == CameraLensDirection.external) {
+            selectedCamera = camera;
+            break;
+          }
+        }
+
+        // Initialize the selected camera
+        cameraController = CameraController(
+          selectedCamera,
+          ResolutionPreset.high,
+        );
+
+        await cameraController?.initialize();
+
+        if (mounted) {
+          setState(() {});
+        }
+      } else {
+        isCameraAvailable = false;
+        developer.log('No cameras available', name: 'HomePage');
+        setState(() {});
+      }
+    } catch (e) {
+      isCameraAvailable = false;
+      developer.log('Error initializing camera: ${e.toString()}',
+          name: 'HomePage');
+      setState(() {});
+    }
+  }
 }
+
+  /*Future<void> _triggerPythonFunctionality() async {
+    // Replace this with your Python server's address and port
+    const pythonServerUrl = 'http://127.0.0.1:5000/run';
+
+    try {
+      final response = await http.get(Uri.parse(pythonServerUrl));
+      if (!mounted) return; // Check if the widget is still mounted before updating the UI
+
+      if (response.statusCode == 200) {
+        developer.log('Python response: ${response.body}', name: 'HomePage');
+        // Show dialog only if the widget is mounted
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Python Script Response'),
+              content: Text(response.body),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      } else {
+        developer.log('Python script error: ${response.statusCode}', name: 'HomePage');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error triggering Python script')),
+          );
+        }
+      }
+    } catch (e) {
+      developer.log('Error triggering Python script: ${e.toString()}', name: 'HomePage');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to communicate with Python')),
+        );
+      }
+    }
+  }
+}*/

@@ -1,72 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'home_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../notifiers/camera_notifier.dart';
+import 'camera_page.dart';
 
-class StartPage extends StatefulWidget {
+class StartPage extends ConsumerWidget {
   const StartPage({super.key});
 
   @override
-  State<StartPage> createState() => _StartPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cameraState = ref.watch(cameraNotifierProvider);
+    final cameraNotifier = ref.read(cameraNotifierProvider.notifier);
 
-class _StartPageState extends State<StartPage> {
-  bool _isLoading = false;
-  String _statusMessage = '';
-
-  Future<void> _startCamera() async {
-    const apiUrl =
-        'http://192.168.29.168:4000/start_camera'; // Replace with your server IP
-
-    setState(() {
-      _isLoading = true;
-      _statusMessage = '';
-    });
-
-    try {
-      final response = await http.post(Uri.parse(apiUrl));
-
-      if (response.statusCode == 200) {
-        final result = json.decode(response.body);
-        if (result['status'] == 'success') {
-          // Check if the widget is still mounted before using context
-          if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-            );
-          }
-        } else {
-          if (mounted) {
-            setState(() {
-              _statusMessage = result['message'];
-            });
-          }
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _statusMessage = 'Error: Unable to communicate with the server.';
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _statusMessage = 'Exception: $e';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    // Navigate to the CameraPage if initialization succeeds
+    if (cameraState.isInitialized) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const CameraPage(),
+          ),
+        );
+      });
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Start Camera'),
@@ -75,18 +31,20 @@ class _StartPageState extends State<StartPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (_isLoading)
+            if (cameraState.isLoading)
               const CircularProgressIndicator()
             else
               ElevatedButton(
-                onPressed: _startCamera,
-                child: const Text('Start camera'),
+                onPressed: () {
+                  cameraNotifier.initializeCamera('http://192.168.29.205:5001');
+                },
+                child: const Text('Start Camera'),
               ),
-            if (_statusMessage.isNotEmpty)
+            if (cameraState.statusMessage.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  _statusMessage,
+                  cameraState.statusMessage,
                   style: const TextStyle(color: Colors.red),
                   textAlign: TextAlign.center,
                 ),

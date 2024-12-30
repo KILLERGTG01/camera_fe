@@ -27,6 +27,7 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             developer.log('Return button pressed', name: 'TopAppBar');
+            Navigator.pop(context);
           },
         ),
         // Share Button
