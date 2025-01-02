@@ -20,4 +20,7 @@ flutter_launcher_icons:
     image_path: "assets/logo.png"
   ipad:
     generate: true
-    image_path: "assets/logo.png"  
+    image_path: "assets/logo.png" 
+  ipados:
+    generate: true
+    image_path: "assets/logo.png"
