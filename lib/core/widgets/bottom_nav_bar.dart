@@ -1,3 +1,4 @@
+import 'package:dewinter_gallery/features/camera/camera_page.dart';
 import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
 
@@ -14,7 +15,12 @@ class BottomNavBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.camera_alt, color: Colors.black),
             onPressed: () {
-              developer.log('Camera button pressed', name: 'BottomNavBar');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CameraPage(),
+                ),
+              );
             },
           ),
           IconButton(
