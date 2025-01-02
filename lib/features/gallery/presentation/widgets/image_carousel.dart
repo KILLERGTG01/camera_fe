@@ -16,7 +16,7 @@ class ImageCarousel extends StatefulWidget {
   });
 
   @override
-  _ImageCarouselState createState() => _ImageCarouselState();
+  State<ImageCarousel> createState() => _ImageCarouselState();
 }
 
 class _ImageCarouselState extends State<ImageCarousel> {
@@ -27,7 +27,6 @@ class _ImageCarouselState extends State<ImageCarousel> {
   void didUpdateWidget(covariant ImageCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Center the selected image unless it's a corner image
     if (widget.highlightedIndex > 0 &&
         widget.highlightedIndex < widget.selectedImages.length - 1) {
       _carouselController.animateToPage(widget.highlightedIndex);
@@ -36,7 +35,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final double carouselHeight = 60; // Same height as button (square)
+    final double carouselHeight = 60;
 
     return CarouselSlider(
       items: widget.selectedImages.asMap().entries.map(
@@ -47,20 +46,20 @@ class _ImageCarouselState extends State<ImageCarousel> {
           return GestureDetector(
             onTap: () => widget.onImageTap(index),
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 2), // Less spacing
               decoration: BoxDecoration(
                 border: Border.all(
                   color: index == widget.highlightedIndex
                       ? Colors.teal // Highlight the selected image
                       : Colors.grey,
-                  width: 3,
+                  width: 2,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 child: AspectRatio(
-                  aspectRatio: 1, // Force square aspect ratio
+                  aspectRatio: 10 / 7, // Force square aspect ratio
                   child: Image.file(
                     File(image.path),
                     fit: BoxFit.cover,
@@ -74,9 +73,9 @@ class _ImageCarouselState extends State<ImageCarousel> {
       carouselController: _carouselController,
       options: CarouselOptions(
         height: carouselHeight,
-        enlargeCenterPage: true,
+        enlargeCenterPage: false, // No enlargement for a straight queue
         enableInfiniteScroll: false,
-        viewportFraction: 0.3, // Small carousel images
+        viewportFraction: 0.15, // Queue-like spacing
         autoPlay: false,
       ),
     );
