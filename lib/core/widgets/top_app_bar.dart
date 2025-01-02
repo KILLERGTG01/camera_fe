@@ -43,12 +43,11 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  /// Share the selected image using the `share_plus` package
   void _shareImage(BuildContext context) async {
     if (selectedImagePath != null) {
       try {
         await Share.shareXFiles(
-          [XFile(selectedImagePath!)], // Pass the selected image path as XFile
+          [XFile(selectedImagePath!)],
           text: 'Check out this image!',
         );
         developer.log('Image shared successfully', name: 'TopAppBar');
