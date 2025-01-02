@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:developer' as developer;
-import '../../../core/widgets/base_scaffold.dart'; // Import BaseScaffold
+
 import 'package:gal/gal.dart';
 
 class CameraPage extends StatefulWidget {
@@ -47,7 +47,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return BaseScaffold(
+    return Scaffold(
       body: _buildUI(),
     );
   }
@@ -71,20 +71,20 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
 
     return SafeArea(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Camera Preview with full width
-          Expanded(
-            child: AspectRatio(
-              aspectRatio: cameraController!.value.aspectRatio,
-              child: CameraPreview(cameraController!),
+      child: SizedBox.expand(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.80,
+              width: MediaQuery.of(context).size.width * 0.90,
+              child: CameraPreview(
+                cameraController!,
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
                   onPressed: () async {
@@ -118,8 +118,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -138,7 +138,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         // Initialize the selected camera
         cameraController = CameraController(
           selectedCamera,
-          ResolutionPreset.high, // Use high resolution
+          ResolutionPreset.max, // Use high resolution
         );
 
         await cameraController?.initialize();
