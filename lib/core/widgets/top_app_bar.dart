@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'dart:developer' as developer;
 
 class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const TopAppBar({super.key});
+  final String? selectedImagePath; // Path to the image to be shared
+
+  const TopAppBar({super.key, this.selectedImagePath});
+
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      title: const Text('Gallery App'),
       actions: [
         // Dropdown Menu Button
         PopupMenuButton<String>(
@@ -22,20 +27,10 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
             ];
           },
         ),
-        // Return Button
-        IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            developer.log('Return button pressed', name: 'TopAppBar');
-            Navigator.pop(context);
-          },
-        ),
         // Share Button
         IconButton(
           icon: const Icon(Icons.ios_share_outlined),
-          onPressed: () {
-            developer.log('Share button pressed', name: 'TopAppBar');
-          },
+          onPressed: () => _shareImage(context),
         ),
         // Delete Button
         IconButton(
@@ -46,6 +41,28 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ],
     );
+  }
+
+  /// Share the selected image using the `share_plus` package
+  void _shareImage(BuildContext context) async {
+    if (selectedImagePath != null) {
+      try {
+        await Share.shareXFiles(
+          [XFile(selectedImagePath!)], // Pass the selected image path as XFile
+          text: 'Check out this image!',
+        );
+        developer.log('Image shared successfully', name: 'TopAppBar');
+      } catch (e) {
+        developer.log('Error sharing image: $e', name: 'TopAppBar');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to share image.')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No image selected to share.')),
+      );
+    }
   }
 
   @override

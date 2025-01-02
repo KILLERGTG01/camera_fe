@@ -50,7 +50,8 @@ class _ImageCarouselState extends State<ImageCarousel> {
               decoration: BoxDecoration(
                 border: Border.all(
                   color: index == widget.highlightedIndex
-                      ? Colors.teal // Highlight the selected image
+                      ? Color.fromARGB(
+                          50, 34, 167, 242) // Highlight the selected image
                       : Colors.grey,
                   width: 2,
                 ),
