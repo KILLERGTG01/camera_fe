@@ -45,7 +45,7 @@ post_install do |installer|
                '$(inherited)',
 
                ## dart: PermissionGroup.calendar
-               ##'PERMISSION_EVENTS=1',
+               'PERMISSION_EVENTS=1',
 
                ## dart: PermissionGroup.reminders
                #'PERMISSION_REMINDERS=0',
@@ -57,7 +57,7 @@ post_install do |installer|
                'PERMISSION_CAMERA=1',
 
                ## dart: PermissionGroup.microphone
-               #'PERMISSION_MICROPHONE=1',
+               'PERMISSION_MICROPHONE=1',
 
                ## dart: PermissionGroup.speech
                #'PERMISSION_SPEECH_RECOGNIZER=0'
@@ -66,19 +66,19 @@ post_install do |installer|
                'PERMISSION_PHOTOS=1',
 
                ## dart: [PermissionGroup.location, PermissionGroup.locationAlways, PermissionGroup.locationWhenInUse]
-               ##'PERMISSION_LOCATION=1',
+               'PERMISSION_LOCATION=1',
 
                ## dart: PermissionGroup.notification
-               ##'PERMISSION_NOTIFICATIONS=1',
+               'PERMISSION_NOTIFICATIONS=1',
 
                ## dart: PermissionGroup.appTrackingTransparency
-                ##'PERMISSION_APP_TRACKING_TRANSPARENCY=1',
+                'PERMISSION_APP_TRACKING_TRANSPARENCY=1',
 
                ## dart: PermissionGroup.mediaLibrary
                 'PERMISSION_MEDIA_LIBRARY=1',
 
                ## dart: PermissionGroup.sensors
-               #'PERMISSION_SENSORS=0'
+               'PERMISSION_SENSORS=1'
              ]
     end
   end

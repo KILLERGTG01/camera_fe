@@ -15,7 +15,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   List<CameraDescription> cameras = [];
   CameraController? cameraController;
   bool isCameraAvailable = true;
-  int selectedCameraIndex = 0; // Track the currently selected camera index
+  int selectedCameraIndex = 0;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
