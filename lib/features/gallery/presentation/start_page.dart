@@ -1,40 +1,76 @@
+import 'dart:io'; // Import for File class
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../logic/image_notifier.dart';
 import 'widgets/image_carousel.dart';
 import '../../../core/widgets/base_scaffold.dart';
 
-class StartPage extends ConsumerWidget {
+class StartPage extends ConsumerStatefulWidget {
   const StartPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StartPage> createState() => _StartPageState();
+}
+
+class _StartPageState extends ConsumerState<StartPage> {
+  int _currentIndex = 0; // Track the selected image index
+
+  @override
+  Widget build(BuildContext context) {
     final imageState = ref.watch(imageNotifierProvider);
     final imageNotifier = ref.read(imageNotifierProvider.notifier);
 
     return BaseScaffold(
-      body: Stack(
+      body: Column(
         children: [
-          // Main content: Images or "No images selected" text
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              imageState.selectedImages.isEmpty
-                  ? const Center(child: Text('No images selected.'))
-                  : ImageCarousel(selectedImages: imageState.selectedImages),
-            ],
+          // Display the highlighted image above the carousel
+          Expanded(
+            flex: 6,
+            child: imageState.selectedImages.isEmpty
+                ? const Center(
+                    child: Text('No images selected.'),
+                  )
+                : Container(
+                    padding: const EdgeInsets.all(8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        File(imageState.selectedImages[_currentIndex].path),
+                        fit: BoxFit.contain, // Ensure the image is not cropped
+                        width: double.infinity,
+                      ),
+                    ),
+                  ),
           ),
 
-          // Positioned button at the center bottom above the bottom navigation bar
-          Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 20, // Above nav bar
-            left: 0,
-            right: 0,
-            child: Center(
-              child: ElevatedButton(
-                onPressed: () => imageNotifier.pickImages(),
-                child: const Text('Select Images'),
+          // Carousel with small images (same height as "Select Images" button)
+          if (imageState.selectedImages.isNotEmpty)
+            SizedBox(
+              height: 60, // Height matching the button
+              child: ImageCarousel(
+                selectedImages: imageState.selectedImages,
+                onImageTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                highlightedIndex: _currentIndex,
               ),
+            ),
+
+          // Positioned button at the bottom
+          Padding(
+            padding: const EdgeInsets.only(top: 20),
+            child: ElevatedButton(
+              onPressed: () => imageNotifier.pickImages(),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(fontSize: 16),
+              ),
+              child: const Text('Select Images'),
             ),
           ),
         ],

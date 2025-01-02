@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static ThemeData dark() {
-    return ThemeData.dark().copyWith(
+  static ThemeData light() {
+    return ThemeData.light().copyWith(
       primaryColor: Colors.teal,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
