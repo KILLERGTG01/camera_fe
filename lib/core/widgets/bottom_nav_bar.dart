@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:developer' as developer;
 import 'package:dewinter_gallery/features/gallery/logic/image_notifier.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});
@@ -76,8 +77,15 @@ class BottomNavBar extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.black),
-            onPressed: () {
-              developer.log('Settings button pressed', name: 'BottomNavBar');
+            onPressed: () async {
+              final bool isOpened = await openAppSettings();
+              if (!isOpened && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Unable to open app settings.'),
+                  ),
+                );
+              }
             },
           ),
         ],
