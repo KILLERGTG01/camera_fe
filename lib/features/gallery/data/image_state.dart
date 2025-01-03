@@ -9,6 +9,7 @@ class ImageState {
     this.isPermissionGranted = false,
   });
 
+  /// Create a new copy of the state with updated fields
   ImageState copyWith({
     List<XFile>? selectedImages,
     bool? isPermissionGranted,

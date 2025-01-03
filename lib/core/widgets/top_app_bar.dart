@@ -1,14 +1,19 @@
+import 'package:dewinter_gallery/features/gallery/data/image_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:developer' as developer;
+import 'package:dewinter_gallery/features/gallery/logic/image_notifier.dart';
+import 'dart:io';
 
-class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String? selectedImagePath;
-
-  const TopAppBar({super.key, this.selectedImagePath});
+class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
+  const TopAppBar({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the current state of ImageNotifier
+    final imageState = ref.watch(imageNotifierProvider);
+
     return AppBar(
       title: const Text('Gallery App'),
       actions: [
@@ -31,7 +36,7 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           icon: const Icon(Icons.ios_share_outlined),
           onPressed: () {
-            _shareImage(context);
+            _shareImage(context, imageState);
           },
         ),
         // Delete Button
@@ -45,14 +50,27 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  /// Share the selected image using the `share_plus` package
-  void _shareImage(BuildContext context) {
-    // Save reference to ScaffoldMessenger before async operation
+  void _shareImage(BuildContext context, ImageState imageState) {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    if (selectedImagePath != null) {
+    if (imageState.selectedImages.isNotEmpty) {
+      final String imagePath = imageState.selectedImages.first.path;
+
+      // Log and check file existence
+      final file = File(imagePath);
+      if (!file.existsSync()) {
+        developer.log('File does not exist at path: $imagePath',
+            name: 'TopAppBar');
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(content: Text('Image file not found.')),
+        );
+        return;
+      }
+
+      developer.log('Sharing file: $imagePath', name: 'TopAppBar');
+
       Share.shareXFiles(
-        [XFile(selectedImagePath!)],
+        [XFile(imagePath)],
         text: 'Check out this image!',
       ).then((_) {
         developer.log('Image shared successfully', name: 'TopAppBar');
