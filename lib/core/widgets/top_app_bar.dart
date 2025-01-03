@@ -50,12 +50,14 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  void _shareImage(BuildContext context, ImageState imageState) {
+  /// Share the selected image
+  void _shareImage(BuildContext context, ImageState imageState) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     if (imageState.selectedImages.isNotEmpty) {
       final String imagePath = imageState.selectedImages.first.path;
 
+      // Check if the file exists
       final file = File(imagePath);
       if (!file.existsSync()) {
         developer.log('File does not exist at path: $imagePath',
@@ -66,19 +68,20 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
         return;
       }
 
-      developer.log('Sharing file: $imagePath', name: 'TopAppBar');
+      developer.log('Attempting to share file: $imagePath', name: 'TopAppBar');
 
-      Share.shareXFiles(
-        [XFile(imagePath)],
-        text: 'Check out this image!',
-      ).then((_) {
-        developer.log('Image shared successfully', name: 'TopAppBar');
-      }).catchError((e) {
-        developer.log('Error sharing image: $e', name: 'TopAppBar');
+      try {
+        // Correct use of Share.shareXFiles
+        final xFile = XFile(imagePath);
+        await Share.shareXFiles([xFile], text: 'Check out this image!');
+        developer.log('Sharing prompt displayed successfully',
+            name: 'TopAppBar');
+      } catch (e) {
+        developer.log('Error displaying sharing prompt: $e', name: 'TopAppBar');
         scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Failed to share image.')),
         );
-      });
+      }
     } else {
       scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('No image selected to share.')),
@@ -86,6 +89,7 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     }
   }
 
+  /// Delete the selected image
   void _deleteImage(
     BuildContext context,
     ImageNotifier imageNotifier,
