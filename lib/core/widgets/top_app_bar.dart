@@ -15,7 +15,7 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final imageState = ref.watch(imageNotifierProvider);
 
     return AppBar(
-      title: const Text('Gallery App'),
+      title: const Text('PathPlus'),
       actions: [
         // Dropdown Menu Button
         PopupMenuButton<String>(
