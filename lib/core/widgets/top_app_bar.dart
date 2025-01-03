@@ -17,7 +17,6 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     return AppBar(
       title: const Text('PathPlus'),
       actions: [
-        // Dropdown Menu Button
         PopupMenuButton<String>(
           icon: const Icon(Icons.menu),
           onSelected: (String value) {
@@ -50,14 +49,12 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  /// Share the selected image
   void _shareImage(BuildContext context, ImageState imageState) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     if (imageState.selectedImages.isNotEmpty) {
       final String imagePath = imageState.selectedImages.first.path;
 
-      // Check if the file exists
       final file = File(imagePath);
       if (!file.existsSync()) {
         developer.log('File does not exist at path: $imagePath',
@@ -71,7 +68,6 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
       developer.log('Attempting to share file: $imagePath', name: 'TopAppBar');
 
       try {
-        // Correct use of Share.shareXFiles
         final xFile = XFile(imagePath);
         await Share.shareXFiles([xFile], text: 'Check out this image!');
         developer.log('Sharing prompt displayed successfully',
@@ -89,7 +85,6 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     }
   }
 
-  /// Delete the selected image
   void _deleteImage(
     BuildContext context,
     ImageNotifier imageNotifier,
