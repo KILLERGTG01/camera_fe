@@ -76,8 +76,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
-            height: MediaQuery.of(context).size.height * 0.80,
-            width: MediaQuery.of(context).size.width * 0.90,
+            height: MediaQuery.of(context).size.height * 0.70,
+            width: MediaQuery.of(context).size.width * 0.70,
             child: CameraPreview(
               cameraController!,
             ),
@@ -133,10 +133,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         // Select the current camera by index
         CameraDescription selectedCamera = cameras[selectedCameraIndex];
 
-        // Initialize the selected camera
         cameraController = CameraController(
           selectedCamera,
-          ResolutionPreset.max, // Use high resolution
+          ResolutionPreset.max,
         );
 
         await cameraController?.initialize();

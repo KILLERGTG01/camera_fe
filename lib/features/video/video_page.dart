@@ -77,7 +77,7 @@ class _VideoPageState extends State<VideoPage> with WidgetsBindingObserver {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.80,
+              height: MediaQuery.of(context).size.height * 0.70,
               width: MediaQuery.of(context).size.width * 0.70,
               child: CameraPreview(
                 cameraController!,
