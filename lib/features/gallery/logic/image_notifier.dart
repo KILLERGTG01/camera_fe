@@ -64,12 +64,26 @@ class ImageNotifier extends StateNotifier<ImageState> {
     }
   }
 
+  /// Delete an image from the state
+  void deleteImage(String path) {
+    final updatedImages =
+        state.selectedImages.where((image) => image.path != path).toList();
+
+    state = state.copyWith(selectedImages: updatedImages);
+
+    _logInfo('Image deleted successfully: $path');
+  }
+
   void _logError(String message, Object error) {
     debugPrint('$message: $error');
   }
 
   void _logWarning(String message) {
     debugPrint('Warning: $message');
+  }
+
+  void _logInfo(String message) {
+    debugPrint('Info: $message');
   }
 }
 

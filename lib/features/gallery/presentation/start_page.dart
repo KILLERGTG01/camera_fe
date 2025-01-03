@@ -64,11 +64,16 @@ class _StartPageState extends ConsumerState<StartPage> {
             child: ElevatedButton(
               onPressed: () => imageNotifier.pickImages(),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 50), // Increased padding for a larger button
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                textStyle: const TextStyle(fontSize: 14),
+                textStyle: const TextStyle(
+                  fontSize: 18, // Larger font size
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               child: const Text('Select Images'),
             ),
