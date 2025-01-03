@@ -1,4 +1,3 @@
-//import 'dart:io';
 import 'package:dewinter_gallery/features/gallery/data/image_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,7 +57,7 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
       // Share the selected image
       Share.shareXFiles(
         [XFile(imagePath)],
-        text: 'Check out this image!',
+        text: 'Shared with PathPlus',
       );
     } else {
       scaffoldMessenger.showSnackBar(
