@@ -7,15 +7,15 @@ import '../data/image_state.dart';
 
 class ImageNotifier extends StateNotifier<ImageState> {
   final ImagePicker _imagePicker = ImagePicker();
+
   ImageNotifier() : super(ImageState());
+
   Future<void> requestPermission() async {
     PermissionStatus status;
 
     if (Platform.isIOS) {
-      // For iOS, request photo library access
       status = await Permission.photos.request();
     } else if (Platform.isAndroid) {
-      // For Android, request storage permission
       status = await Permission.storage.request();
     } else {
       throw UnsupportedError("Unsupported platform");
@@ -28,9 +28,7 @@ class ImageNotifier extends StateNotifier<ImageState> {
     }
   }
 
-  /// Pick multiple images from the gallery
   Future<void> pickImages() async {
-    // Ensure permissions are granted before accessing the gallery
     if (!state.isPermissionGranted) {
       await requestPermission();
     }
@@ -49,6 +47,20 @@ class ImageNotifier extends StateNotifier<ImageState> {
       }
     } else {
       _logWarning('Permission not granted to access the gallery.');
+    }
+  }
+
+  /// Add a single image to the state
+  Future<void> addImageFromPath(String path) async {
+    if (state.selectedImages.length < 10) {
+      state = state.copyWith(
+        selectedImages: [
+          ...state.selectedImages,
+          XFile(path),
+        ],
+      );
+    } else {
+      _logWarning('Maximum number of images reached.');
     }
   }
 
