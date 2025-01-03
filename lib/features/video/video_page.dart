@@ -87,37 +87,7 @@ class _VideoPageState extends State<VideoPage> with WidgetsBindingObserver {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  onPressed: () async {
-                    try {
-                      if (isRecording) {
-                        // Stop recording
-                        XFile videoFile =
-                            await cameraController!.stopVideoRecording();
-                        developer.log(
-                          'Video recorded: ${videoFile.path}',
-                          name: 'VideoPage',
-                        );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Video saved: ${videoFile.path}'),
-                          ),
-                        );
-                        setState(() {
-                          isRecording = false;
-                        });
-                      } else {
-                        // Start recording
-                        await cameraController!.startVideoRecording();
-                        developer.log('Started recording', name: 'VideoPage');
-                        setState(() {
-                          isRecording = true;
-                        });
-                      }
-                    } catch (e) {
-                      developer.log('Error recording video: $e',
-                          name: 'VideoPage');
-                    }
-                  },
+                  onPressed: () => _handleRecording(context),
                   iconSize: 50,
                   icon: Icon(
                     isRecording ? Icons.stop : Icons.videocam,
@@ -142,20 +112,17 @@ class _VideoPageState extends State<VideoPage> with WidgetsBindingObserver {
 
   Future<void> _setupCameraController() async {
     try {
-      // Fetch the list of available cameras
       cameras = await availableCameras();
 
       if (cameras.isNotEmpty) {
         isCameraAvailable = true;
 
-        // Select the current camera by index
         CameraDescription selectedCamera = cameras[selectedCameraIndex];
 
-        // Initialize the selected camera
         cameraController = CameraController(
           selectedCamera,
           ResolutionPreset.max,
-          enableAudio: true, // Enable audio for video recording
+          enableAudio: true,
         );
 
         await cameraController?.initialize();
@@ -166,13 +133,53 @@ class _VideoPageState extends State<VideoPage> with WidgetsBindingObserver {
       } else {
         isCameraAvailable = false;
         developer.log('No cameras available', name: 'VideoPage');
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       }
     } catch (e) {
       isCameraAvailable = false;
       developer.log('Error initializing camera: ${e.toString()}',
           name: 'VideoPage');
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  Future<void> _handleRecording(BuildContext context) async {
+    if (isRecording) {
+      // Stop recording
+      XFile? videoFile;
+      try {
+        videoFile = await cameraController!.stopVideoRecording();
+        developer.log('Video recorded: ${videoFile.path}', name: 'VideoPage');
+      } catch (e) {
+        developer.log('Error stopping video recording: $e', name: 'VideoPage');
+      }
+
+      // Show snackbar with video file path
+      if (videoFile != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Video saved: ${videoFile.path}'),
+          ),
+        );
+      }
+      setState(() {
+        isRecording = false;
+      });
+    } else {
+      // Start recording
+      try {
+        await cameraController!.startVideoRecording();
+        developer.log('Started recording', name: 'VideoPage');
+        setState(() {
+          isRecording = true;
+        });
+      } catch (e) {
+        developer.log('Error starting video recording: $e', name: 'VideoPage');
+      }
     }
   }
 
@@ -180,10 +187,7 @@ class _VideoPageState extends State<VideoPage> with WidgetsBindingObserver {
     if (cameras.isNotEmpty) {
       selectedCameraIndex = (selectedCameraIndex + 1) % cameras.length;
 
-      // Dispose the current camera controller before switching
       await cameraController?.dispose();
-
-      // Setup the new camera controller
       await _setupCameraController();
     }
   }

@@ -58,13 +58,14 @@ class BottomNavBar extends ConsumerWidget {
                   // Update the state with the selected image
                   await imageNotifier.addImageFromPath(image.path);
 
-                  // Navigate to StartPage
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const StartPage(),
-                    ),
-                  );
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StartPage(),
+                      ),
+                    );
+                  }
                 } else {
                   developer.log('No image selected', name: 'BottomNavBar');
                 }
