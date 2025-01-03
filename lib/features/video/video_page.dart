@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:developer' as developer;
 import '../../../core/widgets/base_scaffold.dart';
-import 'package:gal/gal.dart';
 
-class CameraPage extends StatefulWidget {
-  const CameraPage({super.key});
+class VideoPage extends StatefulWidget {
+  const VideoPage({super.key});
 
   @override
-  State<CameraPage> createState() => _CameraPageState();
+  State<VideoPage> createState() => _VideoPageState();
 }
 
-class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
+class _VideoPageState extends State<VideoPage> with WidgetsBindingObserver {
   List<CameraDescription> cameras = [];
   CameraController? cameraController;
   bool isCameraAvailable = true;
   int selectedCameraIndex = 0;
+  bool isRecording = false;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -71,53 +71,71 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
 
     return SafeArea(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.80,
-            width: MediaQuery.of(context).size.width * 0.90,
-            child: CameraPreview(
-              cameraController!,
+      child: SizedBox.expand(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.80,
+              width: MediaQuery.of(context).size.width * 0.70,
+              child: CameraPreview(
+                cameraController!,
+              ),
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                onPressed: () async {
-                  try {
-                    if (cameraController != null &&
-                        cameraController!.value.isInitialized) {
-                      XFile picture = await cameraController!.takePicture();
-                      Gal.putImage(picture.path);
-                    } else {
-                      developer.log('Camera is not initialized',
-                          name: 'CameraPage');
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: () async {
+                    try {
+                      if (isRecording) {
+                        // Stop recording
+                        XFile videoFile =
+                            await cameraController!.stopVideoRecording();
+                        developer.log(
+                          'Video recorded: ${videoFile.path}',
+                          name: 'VideoPage',
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Video saved: ${videoFile.path}'),
+                          ),
+                        );
+                        setState(() {
+                          isRecording = false;
+                        });
+                      } else {
+                        // Start recording
+                        await cameraController!.startVideoRecording();
+                        developer.log('Started recording', name: 'VideoPage');
+                        setState(() {
+                          isRecording = true;
+                        });
+                      }
+                    } catch (e) {
+                      developer.log('Error recording video: $e',
+                          name: 'VideoPage');
                     }
-                  } catch (e) {
-                    developer.log('Error taking picture: ${e.toString()}',
-                        name: 'CameraPage');
-                  }
-                },
-                iconSize: 50,
-                icon: const Icon(
-                  Icons.camera,
-                  color: Colors.red,
+                  },
+                  iconSize: 50,
+                  icon: Icon(
+                    isRecording ? Icons.stop : Icons.videocam,
+                    color: isRecording ? Colors.red : Colors.blue,
+                  ),
                 ),
-              ),
-              IconButton(
-                onPressed: _switchCamera, // Switch camera on button press
-                iconSize: 50,
-                icon: const Icon(
-                  Icons.switch_camera,
-                  color: Colors.blue,
+                IconButton(
+                  onPressed: _switchCamera, // Switch camera on button press
+                  iconSize: 50,
+                  icon: const Icon(
+                    Icons.switch_camera,
+                    color: Colors.blue,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -136,7 +154,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         // Initialize the selected camera
         cameraController = CameraController(
           selectedCamera,
-          ResolutionPreset.max, // Use high resolution
+          ResolutionPreset.max,
+          enableAudio: true, // Enable audio for video recording
         );
 
         await cameraController?.initialize();
@@ -146,13 +165,13 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         }
       } else {
         isCameraAvailable = false;
-        developer.log('No cameras available', name: 'CameraPage');
+        developer.log('No cameras available', name: 'VideoPage');
         setState(() {});
       }
     } catch (e) {
       isCameraAvailable = false;
       developer.log('Error initializing camera: ${e.toString()}',
-          name: 'CameraPage');
+          name: 'VideoPage');
       setState(() {});
     }
   }

@@ -3,7 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import 'dart:developer' as developer;
 
 class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String? selectedImagePath; // Path to the image to be shared
+  final String? selectedImagePath;
 
   const TopAppBar({super.key, this.selectedImagePath});
 
@@ -30,7 +30,9 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
         // Share Button
         IconButton(
           icon: const Icon(Icons.ios_share_outlined),
-          onPressed: () => _shareImage(context),
+          onPressed: () {
+            _shareImage(context);
+          },
         ),
         // Delete Button
         IconButton(
@@ -43,22 +45,25 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  void _shareImage(BuildContext context) async {
+  /// Share the selected image using the `share_plus` package
+  void _shareImage(BuildContext context) {
+    // Save reference to ScaffoldMessenger before async operation
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     if (selectedImagePath != null) {
-      try {
-        await Share.shareXFiles(
-          [XFile(selectedImagePath!)],
-          text: 'Check out this image!',
-        );
+      Share.shareXFiles(
+        [XFile(selectedImagePath!)],
+        text: 'Check out this image!',
+      ).then((_) {
         developer.log('Image shared successfully', name: 'TopAppBar');
-      } catch (e) {
+      }).catchError((e) {
         developer.log('Error sharing image: $e', name: 'TopAppBar');
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Failed to share image.')),
         );
-      }
+      });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('No image selected to share.')),
       );
     }

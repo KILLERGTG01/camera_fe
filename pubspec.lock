@@ -288,6 +288,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.2"
+  image_annotation:
+    dependency: "direct main"
+    description:
+      name: image_annotation
+      sha256: "9a50117f7000bf56adb1819fa08d3566b7bcb17dd1c9236138f10ef32b876e6a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
   image_picker:
     dependency: "direct main"
     description:
