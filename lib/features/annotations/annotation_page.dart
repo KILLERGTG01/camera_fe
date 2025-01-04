@@ -20,7 +20,7 @@ class _AnnotationPageState extends State<AnnotationPage> {
   final ValueNotifier<String?> selectedShapeNotifier =
       ValueNotifier<String?>(null);
   final List<Offset?> _points = [];
-  final List<Map<String, dynamic>> _annotations = []; // Store all annotations
+  final List<Map<String, Object>> _annotations = []; // Explicit typing
   Rect? _currentRect;
   Offset? _circleCenter;
   Offset? _circleRadiusPoint;
@@ -34,15 +34,15 @@ class _AnnotationPageState extends State<AnnotationPage> {
         _points.clear();
       } else if (selectedShapeNotifier.value == 'Rectangle' &&
           _currentRect != null) {
-        _annotations.add({'type': 'Rectangle', 'rect': _currentRect});
+        _annotations.add({'type': 'Rectangle', 'rect': _currentRect!});
         _currentRect = null;
       } else if (selectedShapeNotifier.value == 'Circle' &&
           _circleCenter != null &&
           _circleRadiusPoint != null) {
         _annotations.add({
           'type': 'Circle',
-          'center': _circleCenter,
-          'radiusPoint': _circleRadiusPoint
+          'center': _circleCenter!,
+          'radiusPoint': _circleRadiusPoint!
         });
         _circleCenter = null;
         _circleRadiusPoint = null;
@@ -51,8 +51,8 @@ class _AnnotationPageState extends State<AnnotationPage> {
           _lineEnd != null) {
         _annotations.add({
           'type': 'Line',
-          'start': _lineStart,
-          'end': _lineEnd,
+          'start': _lineStart!,
+          'end': _lineEnd!,
         });
         _lineStart = null;
         _lineEnd = null;
@@ -194,7 +194,7 @@ class _AnnotationPageState extends State<AnnotationPage> {
 
 class ShapePainter extends CustomPainter {
   final List<Offset?> points;
-  final List<Map<String, dynamic>> annotations;
+  final List<Map<String, Object>> annotations;
   final Rect? rect;
   final Offset? circleCenter;
   final Offset? circleRadiusPoint;
@@ -221,7 +221,7 @@ class ShapePainter extends CustomPainter {
     // Draw saved annotations
     for (var annotation in annotations) {
       if (annotation['type'] == 'Freehand') {
-        final points = annotation['points'] as List<Offset?>;
+        final points = (annotation['points'] as List<Offset?>);
         for (int i = 0; i < points.length - 1; i++) {
           if (points[i] != null && points[i + 1] != null) {
             canvas.drawLine(points[i]!, points[i + 1]!, paint);
