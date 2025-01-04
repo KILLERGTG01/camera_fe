@@ -10,7 +10,7 @@ class BaseScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const TopAppBar(),
+      appBar: TopAppBar(),
       bottomNavigationBar: const BottomNavBar(),
       body: body,
     );
