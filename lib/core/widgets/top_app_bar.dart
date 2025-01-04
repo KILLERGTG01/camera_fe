@@ -16,18 +16,10 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     return AppBar(
       title: const Text('PathPlus'),
       actions: [
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.menu),
-          onSelected: (String value) {
-            developer.log('Selected option: $value', name: 'TopAppBar');
-          },
-          itemBuilder: (BuildContext context) {
-            return [
-              const PopupMenuItem(value: 'Option 1', child: Text('Option 1')),
-              const PopupMenuItem(value: 'Option 2', child: Text('Option 2')),
-              const PopupMenuItem(value: 'Option 3', child: Text('Option 3')),
-              const PopupMenuItem(value: 'Option 4', child: Text('Option 4')),
-            ];
+        IconButton(
+          icon: const Icon(Icons.draw_sharp),
+          onPressed: () {
+            developer.log('Selected shape: ', name: 'TopAppBar');
           },
         ),
         // Share Button
@@ -54,7 +46,6 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     if (imageState.selectedImages.isNotEmpty) {
       final String imagePath = imageState.selectedImages.first.path;
 
-      // Share the selected image
       Share.shareXFiles(
         [XFile(imagePath)],
         text: 'Shared with PathPlus',
