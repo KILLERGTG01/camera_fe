@@ -19,9 +19,8 @@ class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
       key: appBarKey,
       title: const Text('PathPlus'),
       actions: [
-        // Annotation Button
         IconButton(
-          icon: const Icon(Icons.draw_sharp),
+          icon: const Icon(Icons.colorize_sharp),
           onPressed: () {
             _navigateToAnnotation(context, imageState);
           },
