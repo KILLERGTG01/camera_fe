@@ -36,7 +36,7 @@ class _StartPageState extends ConsumerState<StartPage> {
                       borderRadius: BorderRadius.circular(12),
                       child: Image.file(
                         File(imageState.selectedImages[_currentIndex].path),
-                        fit: BoxFit.contain, // Ensure the image is not cropped
+                        fit: BoxFit.contain,
                         width: double.infinity,
                       ),
                     ),
