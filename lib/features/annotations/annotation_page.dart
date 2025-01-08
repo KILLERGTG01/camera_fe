@@ -30,7 +30,11 @@ class _AnnotationPageState extends State<AnnotationPage> {
   void saveAnnotations() {
     setState(() {
       if (selectedShapeNotifier.value == 'Freehand' && _points.isNotEmpty) {
-        _annotations.add({'type': 'Freehand', 'points': List.from(_points)});
+        _annotations.add({
+          'type': 'Freehand',
+          'points':
+              List<Offset?>.from(_points), // Explicitly cast to List<Offset?>
+        });
         _points.clear();
       } else if (selectedShapeNotifier.value == 'Rectangle' &&
           _currentRect != null) {
@@ -221,7 +225,7 @@ class ShapePainter extends CustomPainter {
     // Draw saved annotations
     for (var annotation in annotations) {
       if (annotation['type'] == 'Freehand') {
-        final points = (annotation['points'] as List<Offset?>);
+        final points = annotation['points'] as List<Offset?>;
         for (int i = 0; i < points.length - 1; i++) {
           if (points[i] != null && points[i + 1] != null) {
             canvas.drawLine(points[i]!, points[i + 1]!, paint);
