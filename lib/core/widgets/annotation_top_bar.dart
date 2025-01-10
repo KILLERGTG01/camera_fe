@@ -30,6 +30,11 @@ class AnnotationTopBar extends StatelessWidget implements PreferredSizeWidget {
               PopupMenuItem(value: 'Rectangle', child: Text('Rectangle')),
               PopupMenuItem(value: 'Circle', child: Text('Circle')),
               PopupMenuItem(value: 'Line', child: Text('Line')),
+              PopupMenuItem(
+                  value: 'Horizontal Line', child: Text('Horizontal Line')),
+              PopupMenuItem(
+                  value: 'Vertical Line', child: Text('Vertical Line')),
+              PopupMenuItem(value: 'Text', child: Text('Text')),
             ];
           },
         ),

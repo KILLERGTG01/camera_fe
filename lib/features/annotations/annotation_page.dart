@@ -19,52 +19,86 @@ class _AnnotationPageState extends State<AnnotationPage> {
   final GlobalKey repaintBoundaryKey = GlobalKey();
   final ValueNotifier<String?> selectedShapeNotifier =
       ValueNotifier<String?>(null);
-  final List<Offset?> _points = [];
-  final List<Map<String, Object>> _annotations = []; // Explicit typing
-  Rect? _currentRect;
-  Offset? _circleCenter;
-  Offset? _circleRadiusPoint;
-  Offset? _lineStart;
-  Offset? _lineEnd;
 
+  // Drawing state variables
+  final List<Offset?> _points = [];
+  final List<Map<String, Object>> _annotations = [];
+  Rect? _currentRect;
+  Offset? _circleCenter, _circleRadiusPoint;
+  Offset? _lineStart, _lineEnd;
+  Offset? _textPosition;
+  String? _text;
+
+  /// Save annotations based on the selected shape
   void saveAnnotations() {
     setState(() {
-      if (selectedShapeNotifier.value == 'Freehand' && _points.isNotEmpty) {
-        _annotations.add({
-          'type': 'Freehand',
-          'points':
-              List<Offset?>.from(_points), // Explicitly cast to List<Offset?>
-        });
-        _points.clear();
-      } else if (selectedShapeNotifier.value == 'Rectangle' &&
-          _currentRect != null) {
-        _annotations.add({'type': 'Rectangle', 'rect': _currentRect!});
-        _currentRect = null;
-      } else if (selectedShapeNotifier.value == 'Circle' &&
-          _circleCenter != null &&
-          _circleRadiusPoint != null) {
-        _annotations.add({
-          'type': 'Circle',
-          'center': _circleCenter!,
-          'radiusPoint': _circleRadiusPoint!
-        });
-        _circleCenter = null;
-        _circleRadiusPoint = null;
-      } else if (selectedShapeNotifier.value == 'Line' &&
-          _lineStart != null &&
-          _lineEnd != null) {
-        _annotations.add({
-          'type': 'Line',
-          'start': _lineStart!,
-          'end': _lineEnd!,
-        });
-        _lineStart = null;
-        _lineEnd = null;
+      switch (selectedShapeNotifier.value) {
+        case 'Freehand':
+          if (_points.isNotEmpty) {
+            _annotations.add({
+              'type': 'Freehand',
+              'points': List<Offset?>.from(_points),
+            });
+            _points.clear();
+          }
+          break;
+        case 'Rectangle':
+          if (_currentRect != null) {
+            _annotations.add({'type': 'Rectangle', 'rect': _currentRect!});
+            _currentRect = null;
+          }
+          break;
+        case 'Circle':
+          if (_circleCenter != null && _circleRadiusPoint != null) {
+            _annotations.add({
+              'type': 'Circle',
+              'center': _circleCenter!,
+              'radiusPoint': _circleRadiusPoint!
+            });
+            _circleCenter = null;
+            _circleRadiusPoint = null;
+          }
+          break;
+        case 'Line':
+          if (_lineStart != null && _lineEnd != null) {
+            _annotations.add({
+              'type': 'Line',
+              'start': _lineStart!,
+              'end': _lineEnd!,
+            });
+            _lineStart = null;
+            _lineEnd = null;
+          }
+          break;
+        case 'Horizontal Line':
+          if (_lineStart != null) {
+            _annotations.add({'type': 'Horizontal Line', 'start': _lineStart!});
+            _lineStart = null;
+          }
+          break;
+        case 'Vertical Line':
+          if (_lineStart != null) {
+            _annotations.add({'type': 'Vertical Line', 'start': _lineStart!});
+            _lineStart = null;
+          }
+          break;
+        case 'Text':
+          if (_textPosition != null && _text != null) {
+            _annotations.add({
+              'type': 'Text',
+              'position': _textPosition!,
+              'text': _text!,
+            });
+            _textPosition = null;
+            _text = null;
+          }
+          break;
       }
     });
   }
 
-  Future<void> _saveImage() async {
+  /// Save the current canvas as an image
+  Future<void> saveImage() async {
     try {
       final boundary = repaintBoundaryKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
@@ -97,10 +131,62 @@ class _AnnotationPageState extends State<AnnotationPage> {
     }
   }
 
+  /// Revert the last annotation
   void revertLastAnnotation() {
     setState(() {
       if (_annotations.isNotEmpty) {
         _annotations.removeLast();
+      }
+    });
+  }
+
+  /// Gesture handlers
+  void onPanStart(DragStartDetails details) {
+    setState(() {
+      switch (selectedShapeNotifier.value) {
+        case 'Freehand':
+          _points.add(details.localPosition);
+          break;
+        case 'Rectangle':
+          _currentRect =
+              Rect.fromPoints(details.localPosition, details.localPosition);
+          break;
+        case 'Circle':
+          _circleCenter = details.localPosition;
+          _circleRadiusPoint = details.localPosition;
+          break;
+        case 'Line':
+        case 'Horizontal Line':
+        case 'Vertical Line':
+          _lineStart = details.localPosition;
+          _lineEnd = details.localPosition;
+          break;
+        case 'Text':
+          _textPosition = details.localPosition;
+          _text = 'Sample Text';
+          break;
+      }
+    });
+  }
+
+  void onPanUpdate(DragUpdateDetails details) {
+    setState(() {
+      switch (selectedShapeNotifier.value) {
+        case 'Freehand':
+          _points.add(details.localPosition);
+          break;
+        case 'Rectangle':
+          _currentRect =
+              Rect.fromPoints(_currentRect!.topLeft, details.localPosition);
+          break;
+        case 'Circle':
+          _circleRadiusPoint = details.localPosition;
+          break;
+        case 'Line':
+        case 'Horizontal Line':
+        case 'Vertical Line':
+          _lineEnd = details.localPosition;
+          break;
       }
     });
   }
@@ -114,60 +200,18 @@ class _AnnotationPageState extends State<AnnotationPage> {
         key: repaintBoundaryKey,
         child: Stack(
           children: [
+            // Background image
             Image.file(
               File(widget.imagePath),
               fit: BoxFit.contain,
               width: double.infinity,
             ),
+            // Gesture detector for drawing
             Positioned.fill(
               child: GestureDetector(
-                onPanStart: (details) {
-                  setState(() {
-                    switch (selectedShapeNotifier.value) {
-                      case 'Freehand':
-                        _points.add(details.localPosition);
-                        break;
-                      case 'Rectangle':
-                        _currentRect = Rect.fromPoints(
-                          details.localPosition,
-                          details.localPosition,
-                        );
-                        break;
-                      case 'Circle':
-                        _circleCenter = details.localPosition;
-                        _circleRadiusPoint = details.localPosition;
-                        break;
-                      case 'Line':
-                        _lineStart = details.localPosition;
-                        _lineEnd = details.localPosition;
-                        break;
-                    }
-                  });
-                },
-                onPanUpdate: (details) {
-                  setState(() {
-                    switch (selectedShapeNotifier.value) {
-                      case 'Freehand':
-                        _points.add(details.localPosition);
-                        break;
-                      case 'Rectangle':
-                        _currentRect = Rect.fromPoints(
-                          _currentRect!.topLeft,
-                          details.localPosition,
-                        );
-                        break;
-                      case 'Circle':
-                        _circleRadiusPoint = details.localPosition;
-                        break;
-                      case 'Line':
-                        _lineEnd = details.localPosition;
-                        break;
-                    }
-                  });
-                },
-                onPanEnd: (_) {
-                  saveAnnotations();
-                },
+                onPanStart: onPanStart,
+                onPanUpdate: onPanUpdate,
+                onPanEnd: (_) => saveAnnotations(),
                 child: CustomPaint(
                   painter: ShapePainter(
                     points: _points,
@@ -177,15 +221,18 @@ class _AnnotationPageState extends State<AnnotationPage> {
                     circleRadiusPoint: _circleRadiusPoint,
                     lineStart: _lineStart,
                     lineEnd: _lineEnd,
+                    textPosition: _textPosition,
+                    text: _text,
                   ),
                 ),
               ),
             ),
+            // Save button
             Positioned(
               bottom: 20,
               right: 20,
               child: ElevatedButton(
-                onPressed: _saveImage,
+                onPressed: saveImage,
                 child: const Text('Save'),
               ),
             ),
@@ -200,10 +247,12 @@ class ShapePainter extends CustomPainter {
   final List<Offset?> points;
   final List<Map<String, Object>> annotations;
   final Rect? rect;
-  final Offset? circleCenter;
-  final Offset? circleRadiusPoint;
-  final Offset? lineStart;
-  final Offset? lineEnd;
+  final Offset? circleCenter,
+      circleRadiusPoint,
+      lineStart,
+      lineEnd,
+      textPosition;
+  final String? text;
 
   ShapePainter({
     required this.points,
@@ -213,6 +262,8 @@ class ShapePainter extends CustomPainter {
     required this.circleRadiusPoint,
     required this.lineStart,
     required this.lineEnd,
+    required this.textPosition,
+    required this.text,
   });
 
   @override
@@ -222,38 +273,73 @@ class ShapePainter extends CustomPainter {
       ..strokeWidth = 4.0
       ..style = PaintingStyle.stroke;
 
-    // Draw saved annotations
+    final textPainter = TextPainter(
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+
+    // Render saved annotations
     for (var annotation in annotations) {
-      if (annotation['type'] == 'Freehand') {
-        final points = annotation['points'] as List<Offset?>;
-        for (int i = 0; i < points.length - 1; i++) {
-          if (points[i] != null && points[i + 1] != null) {
-            canvas.drawLine(points[i]!, points[i + 1]!, paint);
+      switch (annotation['type']) {
+        case 'Freehand':
+          final points = annotation['points'] as List<Offset?>;
+          for (int i = 0; i < points.length - 1; i++) {
+            if (points[i] != null && points[i + 1] != null) {
+              canvas.drawLine(points[i]!, points[i + 1]!, paint);
+            }
           }
-        }
-      } else if (annotation['type'] == 'Rectangle') {
-        final rect = annotation['rect'] as Rect;
-        canvas.drawRect(rect, paint);
-      } else if (annotation['type'] == 'Circle') {
-        final center = annotation['center'] as Offset;
-        final radiusPoint = annotation['radiusPoint'] as Offset;
-        final radius = (center - radiusPoint).distance;
-        canvas.drawCircle(center, radius, paint);
-      } else if (annotation['type'] == 'Line') {
-        final start = annotation['start'] as Offset;
-        final end = annotation['end'] as Offset;
-        canvas.drawLine(start, end, paint);
+          break;
+        case 'Rectangle':
+          canvas.drawRect(annotation['rect'] as Rect, paint);
+          break;
+        case 'Circle':
+          final center = annotation['center'] as Offset;
+          final radiusPoint = annotation['radiusPoint'] as Offset;
+          canvas.drawCircle(center, (center - radiusPoint).distance, paint);
+          break;
+        case 'Line':
+          canvas.drawLine(annotation['start'] as Offset,
+              annotation['end'] as Offset, paint);
+          break;
+        case 'Horizontal Line':
+          final start = annotation['start'] as Offset;
+          canvas.drawLine(
+              Offset(0, start.dy), Offset(size.width, start.dy), paint);
+          break;
+        case 'Vertical Line':
+          final start = annotation['start'] as Offset;
+          canvas.drawLine(
+              Offset(start.dx, 0), Offset(start.dx, size.height), paint);
+          break;
+        case 'Text':
+          final position = annotation['position'] as Offset;
+          final text = annotation['text'] as String;
+          textPainter.text = TextSpan(
+            text: text,
+            style: TextStyle(color: Colors.red, fontSize: 16),
+          );
+          textPainter.layout();
+          textPainter.paint(canvas, position);
+          break;
       }
     }
 
     // Draw current shapes
     if (rect != null) canvas.drawRect(rect!, paint);
     if (circleCenter != null && circleRadiusPoint != null) {
-      final radius = (circleCenter! - circleRadiusPoint!).distance;
-      canvas.drawCircle(circleCenter!, radius, paint);
+      canvas.drawCircle(
+          circleCenter!, (circleCenter! - circleRadiusPoint!).distance, paint);
     }
     if (lineStart != null && lineEnd != null) {
       canvas.drawLine(lineStart!, lineEnd!, paint);
+    }
+    if (textPosition != null && text != null) {
+      textPainter.text = TextSpan(
+        text: text,
+        style: TextStyle(color: Colors.red, fontSize: 16),
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, textPosition!);
     }
     for (int i = 0; i < points.length - 1; i++) {
       if (points[i] != null && points[i + 1] != null) {
@@ -263,7 +349,5 @@ class ShapePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return true;
-  }
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
