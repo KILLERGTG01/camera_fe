@@ -44,7 +44,7 @@ class BottomNavBar extends ConsumerWidget {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.image, color: Colors.black),
+            icon: const Icon(Icons.collections, color: Colors.black),
             onPressed: () async {
               try {
                 final ImagePicker picker = ImagePicker();

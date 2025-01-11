@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
+import 'package:dewinter_gallery/core/widgets/annotation_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:dewinter_gallery/core/widgets/annotation_scaffold.dart';
 import 'package:flutter/rendering.dart';
 
 class AnnotationPage extends StatefulWidget {
@@ -101,28 +101,37 @@ class _AnnotationPageState extends State<AnnotationPage> {
     });
   }
 
+  /// Save the current canvas as an image
   Future<void> saveImage() async {
     try {
+      // Retrieve the RenderRepaintBoundary
       final boundary = repaintBoundaryKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
       if (boundary == null) {
         throw Exception('Failed to retrieve RepaintBoundary.');
       }
 
+      // Convert the boundary to an image
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
+        // Get the application's documents directory
         final directory = await getApplicationDocumentsDirectory();
+
+        // Create the "PathPlus" folder if it doesn't exist
         final pathPlusFolder = Directory('${directory.path}/PathPlus');
         if (!await pathPlusFolder.exists()) {
           await pathPlusFolder.create();
         }
 
+        // Define the file path for the annotated image
         final filePath =
             '${pathPlusFolder.path}/annotated_image_${DateTime.now().millisecondsSinceEpoch}.png';
         final file = File(filePath);
+
+        // Write the image data to the file
         await file.writeAsBytes(byteData.buffer.asUint8List());
 
         if (mounted) {
@@ -150,6 +159,7 @@ class _AnnotationPageState extends State<AnnotationPage> {
     });
   }
 
+  /// Gesture handlers
   void onPanStart(DragStartDetails details) {
     setState(() {
       switch (selectedShapeNotifier.value) {
@@ -165,6 +175,8 @@ class _AnnotationPageState extends State<AnnotationPage> {
           _circleRadiusPoint = details.localPosition;
           break;
         case 'Line':
+        case 'Horizontal Line':
+        case 'Vertical Line':
           _lineStart = details.localPosition;
           _lineEnd = details.localPosition;
           break;
@@ -190,6 +202,8 @@ class _AnnotationPageState extends State<AnnotationPage> {
           _circleRadiusPoint = details.localPosition;
           break;
         case 'Line':
+        case 'Horizontal Line':
+        case 'Vertical Line':
           _lineEnd = details.localPosition;
           break;
       }
@@ -207,11 +221,13 @@ class _AnnotationPageState extends State<AnnotationPage> {
         key: repaintBoundaryKey,
         child: Stack(
           children: [
+            // Background image
             Image.file(
               File(widget.imagePath),
               fit: BoxFit.contain,
               width: double.infinity,
             ),
+            // Gesture detector for drawing
             Positioned.fill(
               child: GestureDetector(
                 onPanStart: onPanStart,
@@ -221,10 +237,19 @@ class _AnnotationPageState extends State<AnnotationPage> {
                   painter: ShapePainter(
                     points: _points,
                     annotations: _annotations,
+                    rect: _currentRect,
+                    circleCenter: _circleCenter,
+                    circleRadiusPoint: _circleRadiusPoint,
+                    lineStart: _lineStart,
+                    lineEnd: _lineEnd,
+                    textPosition: _textPosition,
+                    text: _text,
+                    selectedShape: selectedShapeNotifier.value,
                   ),
                 ),
               ),
             ),
+            // Save button
             Positioned(
               bottom: 20,
               right: 20,
@@ -243,8 +268,27 @@ class _AnnotationPageState extends State<AnnotationPage> {
 class ShapePainter extends CustomPainter {
   final List<Offset?> points;
   final List<Map<String, Object>> annotations;
+  final Rect? rect;
+  final Offset? circleCenter,
+      circleRadiusPoint,
+      lineStart,
+      lineEnd,
+      textPosition;
+  final String? text;
+  final String? selectedShape; // Add selected shape parameter
 
-  ShapePainter({required this.points, required this.annotations});
+  ShapePainter({
+    required this.points,
+    required this.annotations,
+    required this.rect,
+    required this.circleCenter,
+    required this.circleRadiusPoint,
+    required this.lineStart,
+    required this.lineEnd,
+    required this.textPosition,
+    required this.text,
+    required this.selectedShape, // Include it in the constructor
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -253,6 +297,7 @@ class ShapePainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
 
+    // Render saved annotations
     for (var annotation in annotations) {
       final paint = Paint()
         ..color = annotation['color'] as Color? ?? Colors.red
@@ -280,6 +325,16 @@ class ShapePainter extends CustomPainter {
           canvas.drawLine(annotation['start'] as Offset,
               annotation['end'] as Offset, paint);
           break;
+        case 'Horizontal Line':
+          final start = annotation['start'] as Offset;
+          canvas.drawLine(
+              Offset(0, start.dy), Offset(size.width, start.dy), paint);
+          break;
+        case 'Vertical Line':
+          final start = annotation['start'] as Offset;
+          canvas.drawLine(
+              Offset(start.dx, 0), Offset(start.dx, size.height), paint);
+          break;
         case 'Text':
           final position = annotation['position'] as Offset;
           final text = annotation['text'] as String;
@@ -291,6 +346,52 @@ class ShapePainter extends CustomPainter {
           textPainter.paint(canvas, position);
           break;
       }
+    }
+
+    // Draw current shapes
+    if (rect != null) {
+      final paint = Paint()
+        ..color = Colors.red
+        ..strokeWidth = 4.0
+        ..style = PaintingStyle.stroke;
+      canvas.drawRect(rect!, paint);
+    }
+    if (circleCenter != null && circleRadiusPoint != null) {
+      final paint = Paint()
+        ..color = Colors.red
+        ..strokeWidth = 4.0
+        ..style = PaintingStyle.stroke;
+      canvas.drawCircle(
+          circleCenter!, (circleCenter! - circleRadiusPoint!).distance, paint);
+    }
+    if (lineStart != null && lineEnd != null) {
+      final paint = Paint()
+        ..color = Colors.red
+        ..strokeWidth = 4.0
+        ..style = PaintingStyle.stroke;
+      if (selectedShape == 'Horizontal Line') {
+        canvas.drawLine(
+          Offset(0, lineStart!.dy),
+          Offset(size.width, lineStart!.dy),
+          paint,
+        );
+      } else if (selectedShape == 'Vertical Line') {
+        canvas.drawLine(
+          Offset(lineStart!.dx, 0),
+          Offset(lineStart!.dx, size.height),
+          paint,
+        );
+      } else {
+        canvas.drawLine(lineStart!, lineEnd!, paint);
+      }
+    }
+    if (textPosition != null && text != null) {
+      textPainter.text = TextSpan(
+        text: text,
+        style: TextStyle(color: Colors.red, fontSize: 16),
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, textPosition!);
     }
   }
 
