@@ -97,28 +97,42 @@ class _AnnotationPageState extends State<AnnotationPage> {
     });
   }
 
-  /// Save the current canvas as an image
   Future<void> saveImage() async {
     try {
+      // Retrieve the RenderRepaintBoundary
       final boundary = repaintBoundaryKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
       if (boundary == null) {
         throw Exception('Failed to retrieve RepaintBoundary.');
       }
 
+      // Convert the boundary to an image
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
+        // Get the application's documents directory
         final directory = await getApplicationDocumentsDirectory();
+
+        // Create the "PathPlus" folder if it doesn't exist
+        final pathPlusFolder = Directory('${directory.path}/PathPlus');
+        if (!await pathPlusFolder.exists()) {
+          await pathPlusFolder.create();
+        }
+
+        // Define the file path for the annotated image
         final filePath =
-            '${directory.path}/annotated_image_${DateTime.now().millisecondsSinceEpoch}.png';
+            '${pathPlusFolder.path}/annotated_image_${DateTime.now().millisecondsSinceEpoch}.png';
         final file = File(filePath);
+
+        // Write the image data to the file
         await file.writeAsBytes(byteData.buffer.asUint8List());
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Image saved to $filePath')),
+            SnackBar(
+                content: Text('Image saved to PathPlus folder: $filePath')),
           );
         }
       }
