@@ -6,11 +6,16 @@ class AnnotationScaffold extends StatelessWidget {
   final Widget body;
   final ValueNotifier<String?> selectedShapeNotifier;
   final VoidCallback onRevert;
+  final ValueNotifier<Color> selectedColorNotifier; // For annotation color
+  final ValueNotifier<double>
+      selectedThicknessNotifier; // For annotation thickness
 
   const AnnotationScaffold({
     required this.body,
     required this.selectedShapeNotifier,
     required this.onRevert,
+    required this.selectedColorNotifier,
+    required this.selectedThicknessNotifier,
     super.key,
   });
 
@@ -20,6 +25,8 @@ class AnnotationScaffold extends StatelessWidget {
       appBar: AnnotationTopBar(
         selectedShapeNotifier: selectedShapeNotifier,
         onRevert: onRevert,
+        selectedColorNotifier: selectedColorNotifier,
+        selectedThicknessNotifier: selectedThicknessNotifier,
       ),
       bottomNavigationBar: const BottomNavBar(),
       body: body,

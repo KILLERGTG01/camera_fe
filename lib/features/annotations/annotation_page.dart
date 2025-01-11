@@ -19,6 +19,10 @@ class _AnnotationPageState extends State<AnnotationPage> {
   final GlobalKey repaintBoundaryKey = GlobalKey();
   final ValueNotifier<String?> selectedShapeNotifier =
       ValueNotifier<String?>(null);
+  final ValueNotifier<Color> selectedColorNotifier =
+      ValueNotifier<Color>(Colors.red); // Default color
+  final ValueNotifier<double> selectedThicknessNotifier =
+      ValueNotifier<double>(4.0); // Default thickness
 
   // Drawing state variables
   final List<Offset?> _points = [];
@@ -38,13 +42,20 @@ class _AnnotationPageState extends State<AnnotationPage> {
             _annotations.add({
               'type': 'Freehand',
               'points': List<Offset?>.from(_points),
+              'color': selectedColorNotifier.value,
+              'thickness': selectedThicknessNotifier.value,
             });
             _points.clear();
           }
           break;
         case 'Rectangle':
           if (_currentRect != null) {
-            _annotations.add({'type': 'Rectangle', 'rect': _currentRect!});
+            _annotations.add({
+              'type': 'Rectangle',
+              'rect': _currentRect!,
+              'color': selectedColorNotifier.value,
+              'thickness': selectedThicknessNotifier.value,
+            });
             _currentRect = null;
           }
           break;
@@ -53,7 +64,9 @@ class _AnnotationPageState extends State<AnnotationPage> {
             _annotations.add({
               'type': 'Circle',
               'center': _circleCenter!,
-              'radiusPoint': _circleRadiusPoint!
+              'radiusPoint': _circleRadiusPoint!,
+              'color': selectedColorNotifier.value,
+              'thickness': selectedThicknessNotifier.value,
             });
             _circleCenter = null;
             _circleRadiusPoint = null;
@@ -65,21 +78,11 @@ class _AnnotationPageState extends State<AnnotationPage> {
               'type': 'Line',
               'start': _lineStart!,
               'end': _lineEnd!,
+              'color': selectedColorNotifier.value,
+              'thickness': selectedThicknessNotifier.value,
             });
             _lineStart = null;
             _lineEnd = null;
-          }
-          break;
-        case 'Horizontal Line':
-          if (_lineStart != null) {
-            _annotations.add({'type': 'Horizontal Line', 'start': _lineStart!});
-            _lineStart = null;
-          }
-          break;
-        case 'Vertical Line':
-          if (_lineStart != null) {
-            _annotations.add({'type': 'Vertical Line', 'start': _lineStart!});
-            _lineStart = null;
           }
           break;
         case 'Text':
@@ -88,6 +91,7 @@ class _AnnotationPageState extends State<AnnotationPage> {
               'type': 'Text',
               'position': _textPosition!,
               'text': _text!,
+              'color': selectedColorNotifier.value,
             });
             _textPosition = null;
             _text = null;
@@ -99,34 +103,26 @@ class _AnnotationPageState extends State<AnnotationPage> {
 
   Future<void> saveImage() async {
     try {
-      // Retrieve the RenderRepaintBoundary
       final boundary = repaintBoundaryKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
       if (boundary == null) {
         throw Exception('Failed to retrieve RepaintBoundary.');
       }
 
-      // Convert the boundary to an image
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
-        // Get the application's documents directory
         final directory = await getApplicationDocumentsDirectory();
-
-        // Create the "PathPlus" folder if it doesn't exist
         final pathPlusFolder = Directory('${directory.path}/PathPlus');
         if (!await pathPlusFolder.exists()) {
           await pathPlusFolder.create();
         }
 
-        // Define the file path for the annotated image
         final filePath =
             '${pathPlusFolder.path}/annotated_image_${DateTime.now().millisecondsSinceEpoch}.png';
         final file = File(filePath);
-
-        // Write the image data to the file
         await file.writeAsBytes(byteData.buffer.asUint8List());
 
         if (mounted) {
@@ -154,7 +150,6 @@ class _AnnotationPageState extends State<AnnotationPage> {
     });
   }
 
-  /// Gesture handlers
   void onPanStart(DragStartDetails details) {
     setState(() {
       switch (selectedShapeNotifier.value) {
@@ -170,8 +165,6 @@ class _AnnotationPageState extends State<AnnotationPage> {
           _circleRadiusPoint = details.localPosition;
           break;
         case 'Line':
-        case 'Horizontal Line':
-        case 'Vertical Line':
           _lineStart = details.localPosition;
           _lineEnd = details.localPosition;
           break;
@@ -197,8 +190,6 @@ class _AnnotationPageState extends State<AnnotationPage> {
           _circleRadiusPoint = details.localPosition;
           break;
         case 'Line':
-        case 'Horizontal Line':
-        case 'Vertical Line':
           _lineEnd = details.localPosition;
           break;
       }
@@ -209,18 +200,18 @@ class _AnnotationPageState extends State<AnnotationPage> {
   Widget build(BuildContext context) {
     return AnnotationScaffold(
       selectedShapeNotifier: selectedShapeNotifier,
+      selectedColorNotifier: selectedColorNotifier,
+      selectedThicknessNotifier: selectedThicknessNotifier,
       onRevert: revertLastAnnotation,
       body: RepaintBoundary(
         key: repaintBoundaryKey,
         child: Stack(
           children: [
-            // Background image
             Image.file(
               File(widget.imagePath),
               fit: BoxFit.contain,
               width: double.infinity,
             ),
-            // Gesture detector for drawing
             Positioned.fill(
               child: GestureDetector(
                 onPanStart: onPanStart,
@@ -230,18 +221,10 @@ class _AnnotationPageState extends State<AnnotationPage> {
                   painter: ShapePainter(
                     points: _points,
                     annotations: _annotations,
-                    rect: _currentRect,
-                    circleCenter: _circleCenter,
-                    circleRadiusPoint: _circleRadiusPoint,
-                    lineStart: _lineStart,
-                    lineEnd: _lineEnd,
-                    textPosition: _textPosition,
-                    text: _text,
                   ),
                 ),
               ),
             ),
-            // Save button
             Positioned(
               bottom: 20,
               right: 20,
@@ -260,40 +243,22 @@ class _AnnotationPageState extends State<AnnotationPage> {
 class ShapePainter extends CustomPainter {
   final List<Offset?> points;
   final List<Map<String, Object>> annotations;
-  final Rect? rect;
-  final Offset? circleCenter,
-      circleRadiusPoint,
-      lineStart,
-      lineEnd,
-      textPosition;
-  final String? text;
 
-  ShapePainter({
-    required this.points,
-    required this.annotations,
-    required this.rect,
-    required this.circleCenter,
-    required this.circleRadiusPoint,
-    required this.lineStart,
-    required this.lineEnd,
-    required this.textPosition,
-    required this.text,
-  });
+  ShapePainter({required this.points, required this.annotations});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.red
-      ..strokeWidth = 4.0
-      ..style = PaintingStyle.stroke;
-
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
     );
 
-    // Render saved annotations
     for (var annotation in annotations) {
+      final paint = Paint()
+        ..color = annotation['color'] as Color? ?? Colors.red
+        ..strokeWidth = annotation['thickness'] as double? ?? 4.0
+        ..style = PaintingStyle.stroke;
+
       switch (annotation['type']) {
         case 'Freehand':
           final points = annotation['points'] as List<Offset?>;
@@ -315,49 +280,16 @@ class ShapePainter extends CustomPainter {
           canvas.drawLine(annotation['start'] as Offset,
               annotation['end'] as Offset, paint);
           break;
-        case 'Horizontal Line':
-          final start = annotation['start'] as Offset;
-          canvas.drawLine(
-              Offset(0, start.dy), Offset(size.width, start.dy), paint);
-          break;
-        case 'Vertical Line':
-          final start = annotation['start'] as Offset;
-          canvas.drawLine(
-              Offset(start.dx, 0), Offset(start.dx, size.height), paint);
-          break;
         case 'Text':
           final position = annotation['position'] as Offset;
           final text = annotation['text'] as String;
           textPainter.text = TextSpan(
             text: text,
-            style: TextStyle(color: Colors.red, fontSize: 16),
+            style: TextStyle(color: annotation['color'] as Color, fontSize: 16),
           );
           textPainter.layout();
           textPainter.paint(canvas, position);
           break;
-      }
-    }
-
-    // Draw current shapes
-    if (rect != null) canvas.drawRect(rect!, paint);
-    if (circleCenter != null && circleRadiusPoint != null) {
-      canvas.drawCircle(
-          circleCenter!, (circleCenter! - circleRadiusPoint!).distance, paint);
-    }
-    if (lineStart != null && lineEnd != null) {
-      canvas.drawLine(lineStart!, lineEnd!, paint);
-    }
-    if (textPosition != null && text != null) {
-      textPainter.text = TextSpan(
-        text: text,
-        style: TextStyle(color: Colors.red, fontSize: 16),
-      );
-      textPainter.layout();
-      textPainter.paint(canvas, textPosition!);
-    }
-    for (int i = 0; i < points.length - 1; i++) {
-      if (points[i] != null && points[i + 1] != null) {
-        canvas.drawLine(points[i]!, points[i + 1]!, paint);
       }
     }
   }
