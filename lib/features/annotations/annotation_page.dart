@@ -5,6 +5,7 @@ import 'package:dewinter_gallery/core/widgets/annotation_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/rendering.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 class AnnotationPage extends StatefulWidget {
   final String imagePath;
@@ -101,47 +102,68 @@ class _AnnotationPageState extends State<AnnotationPage> {
     });
   }
 
-  /// Save the current canvas as an image
   Future<void> saveImage() async {
     try {
-      // Retrieve the RenderRepaintBoundary
+      debugPrint('Attempting to retrieve RepaintBoundary...');
       final boundary = repaintBoundaryKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
       if (boundary == null) {
-        throw Exception('Failed to retrieve RepaintBoundary.');
+        throw Exception(
+            'Failed to retrieve RepaintBoundary. Ensure it is part of the widget tree.');
       }
 
-      // Convert the boundary to an image
+      debugPrint('Converting RepaintBoundary to image...');
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
 
-      if (byteData != null) {
-        // Get the application's documents directory
-        final directory = await getApplicationDocumentsDirectory();
+      if (byteData == null) {
+        throw Exception('Failed to convert image to ByteData.');
+      }
 
-        // Create the "PathPlus" folder if it doesn't exist
-        final pathPlusFolder = Directory('${directory.path}/PathPlus');
-        if (!await pathPlusFolder.exists()) {
-          await pathPlusFolder.create();
-        }
+      final Uint8List imageBytes = byteData.buffer.asUint8List();
 
-        // Define the file path for the annotated image
-        final filePath =
-            '${pathPlusFolder.path}/annotated_image_${DateTime.now().millisecondsSinceEpoch}.png';
-        final file = File(filePath);
+      debugPrint('Saving image to PathPlus directory...');
+      final directory = await getApplicationDocumentsDirectory();
+      final pathPlusFolder = Directory('${directory.path}/Annotated');
+      if (!await pathPlusFolder.exists()) {
+        debugPrint('Creating PathPlus directory...');
+        await pathPlusFolder.create();
+      }
 
-        // Write the image data to the file
-        await file.writeAsBytes(byteData.buffer.asUint8List());
+      final filePath =
+          '${pathPlusFolder.path}/annotated_image_${DateTime.now().millisecondsSinceEpoch}.png';
+      final file = File(filePath);
+      await file.writeAsBytes(imageBytes);
+      debugPrint('Image saved to PathPlus directory: $filePath');
 
+      debugPrint('Saving image to device gallery...');
+      final galleryResult = await ImageGallerySaver.saveImage(
+        imageBytes,
+        quality: 100,
+        name: 'annotated_image_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      if (galleryResult['isSuccess'] == true) {
+        debugPrint('Image successfully saved to gallery.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text('Image saved to PathPlus folder: $filePath')),
+                content:
+                    Text('Image saved to PathPlus and gallery: $filePath')),
+          );
+        }
+      } else {
+        debugPrint('Failed to save image to gallery.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to save image to gallery')),
           );
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Error occurred while saving image: $e');
+      debugPrint(stackTrace.toString());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save image: $e')),
