@@ -197,10 +197,24 @@ class _AnnotationPageState extends State<AnnotationPage> {
           _circleRadiusPoint = details.localPosition;
           break;
         case 'Line':
-        case 'Horizontal Line':
-        case 'Vertical Line':
           _lineStart = details.localPosition;
           _lineEnd = details.localPosition;
+          break;
+        case 'Horizontal Line':
+          _annotations.add({
+            'type': 'Horizontal Line',
+            'start': details.localPosition,
+            'color': selectedColorNotifier.value,
+            'thickness': selectedThicknessNotifier.value,
+          });
+          break;
+        case 'Vertical Line':
+          _annotations.add({
+            'type': 'Vertical Line',
+            'start': details.localPosition,
+            'color': selectedColorNotifier.value,
+            'thickness': selectedThicknessNotifier.value,
+          });
           break;
         case 'Text':
           _textPosition = details.localPosition;
@@ -224,9 +238,11 @@ class _AnnotationPageState extends State<AnnotationPage> {
           _circleRadiusPoint = details.localPosition;
           break;
         case 'Line':
+          _lineEnd = details.localPosition;
+          break;
         case 'Horizontal Line':
         case 'Vertical Line':
-          _lineEnd = details.localPosition;
+          // No updates required for fixed horizontal/vertical lines
           break;
       }
     });
@@ -349,13 +365,28 @@ class ShapePainter extends CustomPainter {
           break;
         case 'Horizontal Line':
           final start = annotation['start'] as Offset;
+          final paint = Paint()
+            ..color = annotation['color'] as Color? ?? Colors.red
+            ..strokeWidth = annotation['thickness'] as double? ?? 4.0
+            ..style = PaintingStyle.stroke;
           canvas.drawLine(
-              Offset(0, start.dy), Offset(size.width, start.dy), paint);
+            Offset(0, start.dy),
+            Offset(size.width, start.dy),
+            paint,
+          );
           break;
+
         case 'Vertical Line':
           final start = annotation['start'] as Offset;
+          final paint = Paint()
+            ..color = annotation['color'] as Color? ?? Colors.red
+            ..strokeWidth = annotation['thickness'] as double? ?? 4.0
+            ..style = PaintingStyle.stroke;
           canvas.drawLine(
-              Offset(start.dx, 0), Offset(start.dx, size.height), paint);
+            Offset(start.dx, 0),
+            Offset(start.dx, size.height),
+            paint,
+          );
           break;
         case 'Text':
           final position = annotation['position'] as Offset;
