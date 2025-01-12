@@ -17,15 +17,15 @@ class AnnotationPage extends StatefulWidget {
 }
 
 class _AnnotationPageState extends State<AnnotationPage> {
+  final TextEditingController _textController = TextEditingController();
   final GlobalKey repaintBoundaryKey = GlobalKey();
   final ValueNotifier<String?> selectedShapeNotifier =
       ValueNotifier<String?>(null);
   final ValueNotifier<Color> selectedColorNotifier =
-      ValueNotifier<Color>(Colors.red); // Default color
+      ValueNotifier<Color>(Colors.red);
   final ValueNotifier<double> selectedThicknessNotifier =
-      ValueNotifier<double>(4.0); // Default thickness
+      ValueNotifier<double>(4.0);
 
-  // Drawing state variables
   final List<Offset?> _points = [];
   final List<Map<String, Object>> _annotations = [];
   Rect? _currentRect;
@@ -181,6 +181,49 @@ class _AnnotationPageState extends State<AnnotationPage> {
     });
   }
 
+  void _showTextInputDialog(Offset position) {
+    _textController.clear(); // Clear previous input
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Enter Text'),
+          content: TextField(
+            controller: _textController,
+            autofocus: true,
+            decoration: const InputDecoration(hintText: 'Type your text here'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final text = _textController.text;
+                if (text.isNotEmpty) {
+                  setState(() {
+                    _annotations.add({
+                      'type': 'Text',
+                      'position': position,
+                      'text': text,
+                      'color': selectedColorNotifier.value,
+                    });
+                  });
+                }
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// Gesture handlers
   void onPanStart(DragStartDetails details) {
     setState(() {
@@ -217,8 +260,7 @@ class _AnnotationPageState extends State<AnnotationPage> {
           });
           break;
         case 'Text':
-          _textPosition = details.localPosition;
-          _text = 'Sample Text';
+          _showTextInputDialog(details.localPosition);
           break;
       }
     });
