@@ -322,8 +322,6 @@ class _AnnotationPageState extends State<AnnotationPage> {
                     circleRadiusPoint: _circleRadiusPoint,
                     lineStart: _lineStart,
                     lineEnd: _lineEnd,
-                    textPosition: _textPosition,
-                    text: _text,
                     selectedShape: selectedShapeNotifier.value,
                   ),
                 ),
@@ -349,13 +347,8 @@ class ShapePainter extends CustomPainter {
   final List<Offset?> points;
   final List<Map<String, Object>> annotations;
   final Rect? rect;
-  final Offset? circleCenter,
-      circleRadiusPoint,
-      lineStart,
-      lineEnd,
-      textPosition;
-  final String? text;
-  final String? selectedShape; // Add selected shape parameter
+  final Offset? circleCenter, circleRadiusPoint, lineStart, lineEnd;
+  final String? selectedShape;
 
   ShapePainter({
     required this.points,
@@ -365,9 +358,7 @@ class ShapePainter extends CustomPainter {
     required this.circleRadiusPoint,
     required this.lineStart,
     required this.lineEnd,
-    required this.textPosition,
-    required this.text,
-    required this.selectedShape, // Include it in the constructor
+    required this.selectedShape,
   });
 
   @override
@@ -377,7 +368,7 @@ class ShapePainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
 
-    // Render saved annotations
+    // Render finalized annotations
     for (var annotation in annotations) {
       final paint = Paint()
         ..color = annotation['color'] as Color? ?? Colors.red
@@ -407,23 +398,14 @@ class ShapePainter extends CustomPainter {
           break;
         case 'Horizontal Line':
           final start = annotation['start'] as Offset;
-          final paint = Paint()
-            ..color = annotation['color'] as Color? ?? Colors.red
-            ..strokeWidth = annotation['thickness'] as double? ?? 4.0
-            ..style = PaintingStyle.stroke;
           canvas.drawLine(
             Offset(0, start.dy),
             Offset(size.width, start.dy),
             paint,
           );
           break;
-
         case 'Vertical Line':
           final start = annotation['start'] as Offset;
-          final paint = Paint()
-            ..color = annotation['color'] as Color? ?? Colors.red
-            ..strokeWidth = annotation['thickness'] as double? ?? 4.0
-            ..style = PaintingStyle.stroke;
           canvas.drawLine(
             Offset(start.dx, 0),
             Offset(start.dx, size.height),
@@ -443,50 +425,18 @@ class ShapePainter extends CustomPainter {
       }
     }
 
-    // Draw current shapes
-    if (rect != null) {
+    // Draw ongoing freehand points dynamically
+    if (selectedShape == 'Freehand' && points.isNotEmpty) {
       final paint = Paint()
-        ..color = Colors.red
-        ..strokeWidth = 4.0
+        ..color = Colors.red // Temporary color
+        ..strokeWidth = 4.0 // Temporary thickness
         ..style = PaintingStyle.stroke;
-      canvas.drawRect(rect!, paint);
-    }
-    if (circleCenter != null && circleRadiusPoint != null) {
-      final paint = Paint()
-        ..color = Colors.red
-        ..strokeWidth = 4.0
-        ..style = PaintingStyle.stroke;
-      canvas.drawCircle(
-          circleCenter!, (circleCenter! - circleRadiusPoint!).distance, paint);
-    }
-    if (lineStart != null && lineEnd != null) {
-      final paint = Paint()
-        ..color = Colors.red
-        ..strokeWidth = 4.0
-        ..style = PaintingStyle.stroke;
-      if (selectedShape == 'Horizontal Line') {
-        canvas.drawLine(
-          Offset(0, lineStart!.dy),
-          Offset(size.width, lineStart!.dy),
-          paint,
-        );
-      } else if (selectedShape == 'Vertical Line') {
-        canvas.drawLine(
-          Offset(lineStart!.dx, 0),
-          Offset(lineStart!.dx, size.height),
-          paint,
-        );
-      } else {
-        canvas.drawLine(lineStart!, lineEnd!, paint);
+
+      for (int i = 0; i < points.length - 1; i++) {
+        if (points[i] != null && points[i + 1] != null) {
+          canvas.drawLine(points[i]!, points[i + 1]!, paint);
+        }
       }
-    }
-    if (textPosition != null && text != null) {
-      textPainter.text = TextSpan(
-        text: text,
-        style: TextStyle(color: Colors.red, fontSize: 16),
-      );
-      textPainter.layout();
-      textPainter.paint(canvas, textPosition!);
     }
   }
 
