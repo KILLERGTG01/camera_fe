@@ -84,30 +84,48 @@ class AnnotationTopBar extends StatelessWidget implements PreferredSizeWidget {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Select Thickness'),
-          content: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Slider(
-                value: selectedThicknessNotifier.value,
-                min: 1.0,
-                max: 10.0,
-                divisions: 9,
-                label: selectedThicknessNotifier.value.toStringAsFixed(1),
-                onChanged: (double value) {
-                  setState(() {
-                    selectedThicknessNotifier.value = value;
-                  });
-                },
-              );
-            },
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Done'),
+          child: Container(
+            padding: const EdgeInsets.all(16.0),
+            width: 300.0, // Set a fixed width
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Select Thickness',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16.0),
+                StatefulBuilder(
+                  builder: (BuildContext context, StateSetter setState) {
+                    return Slider(
+                      value: selectedThicknessNotifier.value,
+                      min: 1.0,
+                      max: 10.0,
+                      divisions: 9,
+                      label: selectedThicknessNotifier.value.toStringAsFixed(1),
+                      onChanged: (double value) {
+                        setState(() {
+                          selectedThicknessNotifier.value = value;
+                        });
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 16.0),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Done'),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
